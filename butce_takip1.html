@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Bütçem</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bütçem">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f0ece4;--card:#fff;--ink:#1a1a2e;
+  --green:#27ae60;--red:#e74c3c;--orange:#e67e22;
+  --accent:#ff6b35;--muted:#999;--border:#e0d9ce;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);padding-bottom:100px;max-width:480px;margin:0 auto}
+
+.header{background:var(--ink);color:#fff;padding:16px 16px 12px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.header h1{font-size:17px;font-weight:900}
+.month-nav{display:flex;align-items:center;gap:8px}
+.month-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.month-label{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;min-width:100px;text-align:center}
+.tab-row{display:flex;gap:6px}
+.tab-btn{flex:1;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;padding:8px 4px;border-radius:10px;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:var(--accent);color:#fff}
+
+.summary-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 12px 8px}
+.sum-card{background:var(--card);border-radius:14px;padding:10px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.sum-card .label{font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.sum-card .amount{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;word-break:break-all;line-height:1.3}
+.sum-card.gelir .amount{color:var(--green)}
+.sum-card.gider .amount{color:var(--red)}
+.sum-card.pozitif .amount{color:var(--green)}
+.sum-card.negatif .amount{color:var(--red)}
+
+.progress-wrap{padding:0 12px 10px}
+.progress-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between}
+.progress-bar-bg{background:var(--border);border-radius:20px;height:8px;overflow:hidden}
+.progress-bar-fill{height:100%;border-radius:20px;transition:width .5s,background .3s}
+.divider{height:1px;background:var(--border);margin:4px 12px}
+
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 7px;cursor:pointer}
+.section-left{display:flex;align-items:center;gap:8px}
+.section-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.8px}
+.section-arrow{font-size:10px;color:var(--muted);transition:transform .25s;display:inline-block}
+.section-arrow.open{transform:rotate(90deg)}
+.section-right{display:flex;align-items:center;gap:8px}
+.section-total{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted)}
+.add-btn{background:var(--accent);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;min-height:32px}
+
+.items-list{padding:0 12px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;overflow:hidden;transition:max-height .3s ease}
+.items-list.collapsed{max-height:0!important;margin-bottom:0}
+.item-card{background:var(--card);border-radius:12px;padding:11px 12px;display:flex;align-items:center;gap:9px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #ddd}
+.item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-cat{font-size:10px;color:var(--muted);font-weight:600;margin-top:1px}
+.item-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.item-amount{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap}
+.item-amount.cg{color:var(--green)}.item-amount.cr{color:var(--red)}
+.amount-dash{color:#ccc;font-size:13px}
+.auto-badge{font-size:8px;background:#ddeeff;color:#2471a3;border-radius:4px;padding:2px 6px;font-weight:800;white-space:nowrap}
+.icon-btn{background:none;border:none;color:#bbb;font-size:16px;cursor:pointer;padding:4px;line-height:1;border-radius:6px;min-width:28px;min-height:28px;display:flex;align-items:center;justify-content:center}
+.icon-btn:active{background:#f0f0f0;color:var(--ink)}
+.icon-btn.del:active{color:var(--red)}
+.empty-msg{text-align:center;color:var(--muted);font-size:13px;padding:12px;font-weight:600}
+
+.compare-section{padding:12px}
+.compare-title{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.compare-table{background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.compare-row{display:grid;grid-template-columns:76px 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.compare-row:last-child{border-bottom:none}
+.compare-cell{padding:10px 7px;font-size:11px;font-weight:700;text-align:right;font-family:'Space Mono',monospace}
+.compare-cell:first-child{text-align:left;font-family:'Nunito',sans-serif;color:var(--muted)}
+.compare-head{background:#f8f5f0}
+.compare-head .compare-cell{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:8px 7px;font-family:'Nunito',sans-serif}
+.vg{color:var(--green)}.vr{color:var(--red)}
+.vfp{color:var(--green);font-weight:900}.vfn{color:var(--red);font-weight:900}
+
+.cat-section{padding:6px 12px 10px}
+.cat-section-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.cat-bar-row{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.cat-bar-label{font-size:11px;font-weight:700;width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.cat-bar-bg{flex:1;background:var(--border);border-radius:20px;height:7px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:20px;transition:width .5s}
+.cat-bar-val{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;width:70px;text-align:right;color:var(--muted);flex-shrink:0}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:22px 22px 0 0;padding:22px 18px 48px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:900;margin-bottom:16px}
+.modal input,.modal select{width:100%;padding:13px 14px;border:2px solid var(--border);border-radius:12px;font-size:16px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--ink);background:var(--bg);margin-bottom:10px;outline:none;-webkit-appearance:none;appearance:none;display:block}
+.modal input:focus,.modal select:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:10px}
+.modal-btns button{flex:1;padding:14px;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;min-height:48px}
+.btn-confirm{background:var(--ink);color:#fff}
+.btn-cancel{background:var(--border);color:var(--ink)}
+
+.csv-btn{display:block;margin:12px 12px 4px;background:#fff;border:2px solid var(--border);color:var(--ink);border-radius:12px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;text-align:center;width:calc(100% - 24px)}
+
+.view{display:none}.view.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>💰 Bütçem</h1>
+    <div class="month-nav">
+      <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="monthLabel">—</div>
+      <button class="month-btn" onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="switchTab('detay')">📋 Detay</button>
+    <button class="tab-btn" onclick="switchTab('ozet')">📊 Özet</button>
+    <button class="tab-btn" onclick="switchTab('karsi')">📅 Karşılaştır</button>
+  </div>
+</div>
+
+<!-- DETAY -->
+<div class="view active" id="tab-detay">
+  <div class="summary-row">
+    <div class="sum-card gelir"><div class="label">Gelir</div><div class="amount" id="d-gelir">0 ₺</div></div>
+    <div class="sum-card gider"><div class="label">Gider</div><div class="amount" id="d-gider">0 ₺</div></div>
+    <div class="sum-card" id="d-farkCard"><div class="label">Fark</div><div class="amount" id="d-fark">+0 ₺</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span id="pctLabel">Harcama: %0</span><span id="pctNote"></span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="pBar" style="width:0%;background:#27ae60"></div></div>
+  </div>
+  <div class="divider"></div>
+
+  <div class="section-header" onclick="toggleSection('gelir')">
+    <div class="section-left">
+      <span class="section-arrow open" id="arrow-gelir">▶</span>
+      <div class="section-title">📈 Gelirler</div>
+    </div>
+    <div class="section-right">
+      <span class="section-total" id="s-gelir"></span>
+      <button class="add-btn" onclick="event.stopPropagation();openModal('gelir')">+ Ekle</button>
+    </div>
+  </div>
+  <div class="items-list" id="gelirList" style="max-height:2000px"></div>
+  <div class="divider"></div>
+
+  <div class="section-header" onclick="toggleSection('sabit')">
+    <div class="section-left">
+      <span class="section-arrow open" id="arrow-sabit">▶</span>
+      <div class="section-title">🔒 Sabit Giderler</div>
+    </div>
+    <div class="section-right">
+      <span class="section-total" id="s-sabit"></span>
+      <button class="add-btn" onclick="event.stopPropagation();openModal('sabit')">+ Ekle</button>
+    </div>
+  </div>
+  <div class="items-list" id="sabitList" style="max-height:2000px"></div>
+  <div class="divider"></div>
+
+  <div class="section-header" onclick="toggleSection('degisken')">
+    <div class="section-left">
+      <span class="section-arrow open" id="arrow-degisken">▶</span>
+      <div class="section-title">🔄 Değişken Giderler</div>
+    </div>
+    <div class="section-right">
+      <span class="section-total" id="s-degisken"></span>
+      <button class="add-btn" onclick="event.stopPropagation();openModal('degisken')">+ Ekle</button>
+    </div>
+  </div>
+  <div class="items-list" id="degiskenList" style="max-height:2000px"></div>
+
+  <button class="csv-btn" onclick="exportCSV()">⬇️ CSV Olarak İndir</button>
+</div>
+
+<!-- ÖZET -->
+<div class="view" id="tab-ozet">
+  <div class="summary-row">
+    <div class="sum-card gelir"><div class="label">Gelir</div><div class="amount" id="o-gelir">0 ₺</div></div>
+    <div class="sum-card gider"><div class="label">Gider</div><div class="amount" id="o-gider">0 ₺</div></div>
+    <div class="sum-card" id="o-farkCard"><div class="label">Fark</div><div class="amount" id="o-fark">+0 ₺</div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="cat-section">
+    <div class="cat-section-title">Gider Dağılımı</div>
+    <div id="giderBars"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="cat-section">
+    <div class="cat-section-title">Gelir Dağılımı</div>
+    <div id="gelirBars"></div>
+  </div>
+</div>
+
+<!-- KARŞILAŞTIRMA -->
+<div class="view" id="tab-karsi">
+  <div class="compare-section">
+    <div class="compare-title">📅 Son 4 Ay</div>
+    <div class="compare-table">
+      <div class="compare-row compare-head">
+        <div class="compare-cell">Ay</div>
+        <div class="compare-cell">Gelir</div>
+        <div class="compare-cell">Gider</div>
+        <div class="compare-cell">Fark</div>
+      </div>
+      <div id="compareRows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Yeni Kalem</h3>
+    <input type="text" id="mName" placeholder="Açıklama (örn: Maaş, Kira...)" autocomplete="off"/>
+    <select id="mCat"></select>
+    <input type="number" id="mAmount" placeholder="Tutar (₺)" inputmode="decimal" step="0.01"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">İptal</button>
+      <button class="btn-confirm" onclick="saveItem()">Kaydet ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+const CATS = {
+  gelir: [
+    {id:'maas',     label:'Maaş',           color:'#1e8449'},
+    {id:'serbest',  label:'Serbest Meslek',  color:'#7d3c98'},
+    {id:'kira',     label:'Kira Geliri',     color:'#2471a3'},
+    {id:'yatirim',  label:'Yatırım',         color:'#d35400'},
+    {id:'diger',    label:'Diğer',           color:'#7f8c8d'},
+  ],
+  sabit: [
+    {id:'konut',    label:'Kira / Konut',    color:'#922b21'},
+    {id:'fatura',   label:'Faturalar',       color:'#1a5276'},
+    {id:'abonelik', label:'Abonelikler',     color:'#6c3483'},
+    {id:'kredi',    label:'Kredi / Taksit',  color:'#784212'},
+    {id:'sigorta',  label:'Sigorta',         color:'#148f77'},
+    {id:'diger',    label:'Diğer Sabit',     color:'#7f8c8d'},
+  ],
+  degisken: [
+    {id:'market',   label:'Market',          color:'#196f3d'},
+    {id:'yemek',    label:'Yemek / Dışarı',  color:'#d35400'},
+    {id:'ulasim',   label:'Ulaşım',          color:'#1f618d'},
+    {id:'saglik',   label:'Sağlık',          color:'#c0392b'},
+    {id:'egitim',   label:'Eğitim',          color:'#7d3c98'},
+    {id:'giyim',    label:'Giyim',           color:'#2e86c1'},
+    {id:'eglence',  label:'Eğlence',         color:'#e91e8c'},
+    {id:'kart',     label:'Kredi Kartı',     color:'#1a5276'},
+    {id:'diger',    label:'Diğer',           color:'#7f8c8d'},
+  ],
+};
+
+// Varsayılan kalemleri — ilk ay için
+// Gelirler: Maaş recurring:true → sonraki aylara taşınır
+// Sabit giderler: hepsi her ay taşınır (recurring flag gerekmez)
+// Değişken giderler: recurring flag KALDIRILDI — sonraki aya taşınmaz
+const DEFAULT_GELIR = [
+  {name:'Maaş', cat:'maas', amount:0, recurring:true},
+];
+const DEFAULT_SABIT = [
+  {name:'Fuzul',          cat:'diger',  amount:0},
+  {name:'Ev Aidat',       cat:'konut',  amount:0},
+  {name:'Yusuf Harçlık',  cat:'diger',  amount:0},
+  {name:'Büşra Harçlık',  cat:'diger',  amount:0},
+  {name:'Cüneyt Harçlık', cat:'diger',  amount:0},
+  {name:'Memin Harçlık',  cat:'diger',  amount:0},
+  {name:'Cüneyt Yurt',    cat:'diger',  amount:0},
+  {name:'Memin Servis',   cat:'diger',  amount:0},
+  {name:'Memin Yemek',    cat:'diger',  amount:0},
+];
+// YKB ve Kuveyt Türk: artık recurring yok, değişken gider olarak sadece ilk ay gelir
+const DEFAULT_DEGISKEN = [
+  {name:'YKB Kart',         cat:'kart', amount:0},
+  {name:'Kuveyt Türk Kart', cat:'kart', amount:0},
+];
+
+// ─── DURUM ──────────────────────────────────────────────────
+const now = new Date();
+let curYear  = now.getFullYear();
+let curMonth = now.getMonth();
+let modalType = '';
+let editIdx   = null;
+let activeTab = 'detay';
+let collapsed = {gelir:false, sabit:false, degisken:false};
+
+// Veri — localStorage ile kalıcı (GitHub Pages'de sorunsuz çalışır)
+// Key: butce_v4 — güncelleme sonrası eski veriler korunur
+const LS_KEY = 'butce_v4';
+let data = {};
+
+function lsSave() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function lsLoad() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { data = JSON.parse(raw); return true; }
+  } catch(e) {}
+  return false;
+}
+
+// ─── AY YÖNETİMİ ────────────────────────────────────────────
+function key(y, m) {
+  return (y ?? curYear) + '-' + (m ?? curMonth);
+}
+
+function getMonth(y, m) {
+  const k = key(y, m);
+  if (!data[k]) {
+    data[k] = {gelir:[], sabit:[], degisken:[]};
+    carryFrom(y ?? curYear, m ?? curMonth);
+    lsSave();
+  }
+  return data[k];
+}
+
+function carryFrom(y, m) {
+  let pm = m - 1, py = y;
+  if (pm < 0) { pm = 11; py--; }
+  const pk = key(py, pm);
+  const c  = data[key(y, m)];
+
+  if (!data[pk]) {
+    // İlk kez açılıyor — varsayılan kalemleri yükle
+    c.gelir    = DEFAULT_GELIR.map(i => ({...i}));
+    c.sabit    = DEFAULT_SABIT.map(i => ({...i}));
+    c.degisken = DEFAULT_DEGISKEN.map(i => ({...i}));
+    return;
+  }
+
+  const p = data[pk];
+  // Sabit giderler: tümü taşınır (tutarlarıyla birlikte)
+  c.sabit = p.sabit.map(i => ({...i}));
+  // Gelirler: sadece recurring:true olanlar taşınır
+  c.gelir = p.gelir.filter(i => i.recurring === true).map(i => ({...i}));
+  // Değişken giderler: HİÇBİRİ taşınmaz — her ay sıfırdan başlar
+  c.degisken = [];
+}
+
+// ─── FORMAT ─────────────────────────────────────────────────
+function fmt(n) {
+  if (n == null || isNaN(n)) return '0 ₺';
+  return Number(n).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ₺';
+}
+function fmtShort(n) {
+  if (n == null || isNaN(n)) return '0 ₺';
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return (n/1000000).toFixed(1).replace('.0','') + 'M ₺';
+  if (abs >= 1000)    return (n/1000).toFixed(1).replace('.0','') + 'B ₺';
+  return n.toLocaleString('tr-TR') + ' ₺';
+}
+function catInfo(type, id) {
+  return CATS[type]?.find(c => c.id === id) || {label:'Diğer', color:'#7f8c8d'};
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── NAVİGASYON ─────────────────────────────────────────────
+function changeMonth(dir) {
+  curMonth += dir;
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  if (curMonth < 0)  { curMonth = 11; curYear--; }
+  render();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b, i) =>
+    b.classList.toggle('active', ['detay','ozet','karsi'][i] === tab)
+  );
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  render();
+}
+
+function toggleSection(sec) {
+  collapsed[sec] = !collapsed[sec];
+  const listId = sec === 'gelir' ? 'gelirList' : sec === 'sabit' ? 'sabitList' : 'degiskenList';
+  const list   = document.getElementById(listId);
+  const arrow  = document.getElementById('arrow-' + sec);
+  if (collapsed[sec]) {
+    list.classList.add('collapsed');
+    arrow.classList.remove('open');
+  } else {
+    list.classList.remove('collapsed');
+    list.style.maxHeight = '2000px';
+    arrow.classList.add('open');
+  }
+}
+
+// ─── RENDER ─────────────────────────────────────────────────
+function setText(id, v) {
+  const e = document.getElementById(id);
+  if (e) e.textContent = v;
+}
+
+function render() {
+  document.getElementById('monthLabel').textContent = MONTHS[curMonth] + ' ' + curYear;
+  const d   = getMonth();
+  const tg  = d.gelir.reduce((s, i) => s + (i.amount || 0), 0);
+  const tgi = [...d.sabit, ...d.degisken].reduce((s, i) => s + (i.amount || 0), 0);
+  const f   = tg - tgi;
+  const pct = tg > 0 ? Math.min(100, Math.round(tgi / tg * 100)) : 0;
+
+  ['d','o'].forEach(p => {
+    setText(p + '-gelir', fmt(tg));
+    setText(p + '-gider', fmt(tgi));
+    setText(p + '-fark',  (f >= 0 ? '+' : '') + fmt(f));
+    const fc = document.getElementById(p + '-farkCard');
+    if (fc) fc.className = 'sum-card ' + (f >= 0 ? 'pozitif' : 'negatif');
+  });
+
+  setText('s-gelir',    fmt(tg));
+  setText('s-sabit',    fmt(d.sabit.reduce((s,i) => s + (i.amount||0), 0)));
+  setText('s-degisken', fmt(d.degisken.reduce((s,i) => s + (i.amount||0), 0)));
+
+  const pb = document.getElementById('pBar');
+  pb.style.width      = pct + '%';
+  pb.style.background = pct > 90 ? '#e74c3c' : pct > 70 ? '#e67e22' : '#27ae60';
+  setText('pctLabel', 'Harcama: %' + pct);
+  setText('pctNote',  pct > 90 ? '⚠️ Dikkat!' : pct > 70 ? '⚡ Yüksek' : '');
+
+  if (activeTab === 'detay') {
+    renderList('gelirList',    d.gelir,    'gelir');
+    renderList('sabitList',    d.sabit,    'sabit');
+    renderList('degiskenList', d.degisken, 'degisken');
+    ['gelir','sabit','degisken'].forEach(s => {
+      const lid  = s === 'gelir' ? 'gelirList' : s === 'sabit' ? 'sabitList' : 'degiskenList';
+      const list = document.getElementById(lid);
+      list.classList.toggle('collapsed', collapsed[s]);
+      if (!collapsed[s]) list.style.maxHeight = '2000px';
+      document.getElementById('arrow-' + s).classList.toggle('open', !collapsed[s]);
+    });
+  }
+  if (activeTab === 'ozet')  renderOzet(d);
+  if (activeTab === 'karsi') renderKarsi();
+}
+
+function renderList(listId, items, type) {
+  const el = document.getElementById(listId);
+  if (!el) return;
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-msg">Henüz kalem yok</div>';
+    return;
+  }
+  const ig = type === 'gelir';
+  el.innerHTML = items.map((item, idx) => {
+    const cat   = catInfo(type, item.cat);
+    const badge = item.recurring ? '<span class="auto-badge">Otomatik</span>' : '';
+    const hasAmt = item.amount && item.amount !== 0;
+    const amtEl  = hasAmt
+      ? `<span class="item-amount ${ig ? 'cg' : 'cr'}">${ig ? '+' : '-'}${fmt(item.amount)}</span>`
+      : `<span class="amount-dash">—</span>`;
+    return `<div class="item-card" style="border-left-color:${cat.color}">
+      <div class="item-dot" style="background:${cat.color}"></div>
+      <div class="item-info">
+        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-cat">${cat.label}</div>
+      </div>
+      <div class="item-right">
+        ${badge}${amtEl}
+        <button class="icon-btn" onclick="editItem('${type}',${idx})">✏️</button>
+        <button class="icon-btn del" onclick="deleteItem('${type}',${idx})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderOzet(d) {
+  const gMap = {};
+  [...d.sabit, ...d.degisken].forEach(item => {
+    const type = d.sabit.includes(item) ? 'sabit' : 'degisken';
+    const id   = item.cat || 'diger';
+    const info = catInfo(type, id);
+    if (!gMap[id]) gMap[id] = {amount:0, color:info.color, label:info.label};
+    gMap[id].amount += (item.amount || 0);
+  });
+  const gs   = Object.values(gMap).filter(c => c.amount > 0).sort((a,b) => b.amount - a.amount);
+  const gmax = gs[0]?.amount || 1;
+  document.getElementById('giderBars').innerHTML = !gs.length
+    ? '<div class="empty-msg">Gider kaydı yok</div>'
+    : gs.map(c => `<div class="cat-bar-row">
+        <div class="cat-bar-label" style="color:${c.color}">${c.label}</div>
+        <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${Math.round(c.amount/gmax*100)}%;background:${c.color}"></div></div>
+        <div class="cat-bar-val">${fmt(c.amount)}</div>
+      </div>`).join('');
+
+  const gelirMap = {};
+  d.gelir.forEach(item => {
+    const id   = item.cat || 'diger';
+    const info = catInfo('gelir', id);
+    if (!gelirMap[id]) gelirMap[id] = {amount:0, color:info.color, label:info.label};
+    gelirMap[id].amount += (item.amount || 0);
+  });
+  const gls   = Object.values(gelirMap).filter(c => c.amount > 0).sort((a,b) => b.amount - a.amount);
+  const glmax = gls[0]?.amount || 1;
+  document.getElementById('gelirBars').innerHTML = !gls.length
+    ? '<div class="empty-msg">Gelir kaydı yok</div>'
+    : gls.map(c => `<div class="cat-bar-row">
+        <div class="cat-bar-label" style="color:${c.color}">${c.label}</div>
+        <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${Math.round(c.amount/glmax*100)}%;background:${c.color}"></div></div>
+        <div class="cat-bar-val">${fmt(c.amount)}</div>
+      </div>`).join('');
+}
+
+function renderKarsi() {
+  const rows = [];
+  for (let i = 3; i >= 0; i--) {
+    let m = curMonth - i, y = curYear;
+    if (m < 0) { m += 12; y--; }
+    const d  = data[key(y, m)] || {gelir:[], sabit:[], degisken:[]};
+    const g  = d.gelir.reduce((s,x) => s + (x.amount||0), 0);
+    const gi = [...d.sabit, ...d.degisken].reduce((s,x) => s + (x.amount||0), 0);
+    const f  = g - gi;
+    const cur = y === curYear && m === curMonth;
+    rows.push({label: MONTHS[m].slice(0,3) + ' ' + String(y).slice(2), g, gi, f, cur});
+  }
+  document.getElementById('compareRows').innerHTML = rows.map(r => `
+    <div class="compare-row" style="${r.cur ? 'background:#fff8f5' : ''}">
+      <div class="compare-cell" style="font-weight:${r.cur?900:600};color:${r.cur?'var(--accent)':'var(--muted)'}">${r.label}</div>
+      <div class="compare-cell vg">+${fmtShort(r.g)}</div>
+      <div class="compare-cell vr">-${fmtShort(r.gi)}</div>
+      <div class="compare-cell ${r.f>=0?'vfp':'vfn'}">${r.f>=0?'+':''}${fmtShort(r.f)}</div>
+    </div>`).join('');
+}
+
+// ─── CSV ────────────────────────────────────────────────────
+function exportCSV() {
+  const d  = getMonth();
+  const mn = MONTHS[curMonth] + ' ' + curYear;
+  const rows = [['Tür','Kategori','Açıklama','Tutar (₺)']];
+  d.gelir.forEach(i    => rows.push(['Gelir',          catInfo('gelir',i.cat).label,    i.name, i.amount||0]));
+  d.sabit.forEach(i    => rows.push(['Sabit Gider',    catInfo('sabit',i.cat).label,    i.name, i.amount||0]));
+  d.degisken.forEach(i => rows.push(['Değişken Gider', catInfo('degisken',i.cat).label, i.name, i.amount||0]));
+  const tg  = d.gelir.reduce((s,i) => s+(i.amount||0), 0);
+  const tgi = [...d.sabit,...d.degisken].reduce((s,i) => s+(i.amount||0), 0);
+  rows.push([], ['','','Toplam Gelir',tg], ['','','Toplam Gider',tgi], ['','','Fark',tg-tgi]);
+  const csv  = '\uFEFF' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'butce_' + mn.replace(' ','_') + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+
+// ─── MODAL ──────────────────────────────────────────────────
+function openModal(type, idx) {
+  modalType = type;
+  editIdx   = idx ?? null;
+  const titles = {gelir:'📈 Gelir', sabit:'🔒 Sabit Gider', degisken:'🔄 Değişken Gider'};
+  document.getElementById('modalTitle').textContent = titles[type] + (editIdx !== null ? ' Düzenle' : ' Ekle');
+
+  const cats = CATS[type] || [];
+  document.getElementById('mCat').innerHTML = cats.map(c =>
+    `<option value="${c.id}">${c.label}</option>`
+  ).join('');
+
+  if (editIdx !== null) {
+    const it = getMonth()[type][editIdx];
+    document.getElementById('mName').value   = it.name;
+    document.getElementById('mAmount').value = it.amount || '';
+    document.getElementById('mCat').value    = it.cat || cats[0]?.id;
+  } else {
+    document.getElementById('mName').value   = '';
+    document.getElementById('mAmount').value = '';
+    document.getElementById('mCat').value    = cats[0]?.id;
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('mName').focus(), 350);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editIdx = null;
+}
+
+function saveItem() {
+  const name      = document.getElementById('mName').value.trim();
+  const amountStr = document.getElementById('mAmount').value.trim();
+  const cat       = document.getElementById('mCat').value;
+
+  if (!name) { alert('Lütfen bir açıklama girin.'); return; }
+
+  const amount = amountStr === '' ? 0 : parseFloat(amountStr.replace(',', '.'));
+  if (amountStr !== '' && (isNaN(amount) || amount < 0)) {
+    alert('Geçerli bir tutar girin.'); return;
+  }
+
+  const d    = getMonth();
+  // Gelir için recurring:true koru (düzenlemede kaybolmasın)
+  let item = {name, amount, cat};
+  if (modalType === 'gelir') {
+    if (editIdx !== null) {
+      item.recurring = d.gelir[editIdx].recurring || false;
+    } else {
+      item.recurring = false;
+    }
+  }
+
+  if (editIdx !== null) d[modalType][editIdx] = item;
+  else d[modalType].push(item);
+
+  lsSave();
+  closeModal();
+  render();
+}
+
+function editItem(type, idx) { openModal(type, idx); }
+
+function deleteItem(type, idx) {
+  if (!confirm('Bu kalemi silmek istiyor musun?')) return;
+  getMonth()[type].splice(idx, 1);
+  lsSave();
+  render();
+}
+
+// ─── KLAVYE ─────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('open')) saveItem();
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── BAŞLAT ─────────────────────────────────────────────────
+lsLoad();
+getMonth();
+lsSave();
+render();
+</script>
+</body>
+</html>
